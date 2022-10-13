@@ -3,6 +3,7 @@ hubspot lines api
 """
 
 from typing import Dict, Iterator, List, Union
+
 from hubspot3.base import BaseClient
 from hubspot3.crm_associations import CRMAssociationsClient
 from hubspot3.utils import get_log, join_output_properties, ordered_dict, prettify
