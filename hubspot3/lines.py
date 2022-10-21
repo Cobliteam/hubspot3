@@ -29,7 +29,7 @@ class LinesClient(BaseClient):
         self.log = get_log("hubspot3.lines")
 
     def _get_path(self, subpath: str):
-        return "crm-objects/v{}/objects/line_items/{}".format(
+        return "crm-objects/v{}/{}".format(
             self.options.get("version") or LINES_API_VERSION, subpath
         )
 
