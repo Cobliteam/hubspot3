@@ -6,7 +6,13 @@ from typing import Dict, Iterator, List, Union
 
 from hubspot3.base import BaseClient
 from hubspot3.crm_associations import CRMAssociationsClient
-from hubspot3.utils import get_log, join_output_properties, ordered_dict, prettify
+from hubspot3.utils import (
+    get_log,
+    join_output_properties,
+    ordered_dict,
+    prettify,
+    split_properties
+)
 
 
 LINES_API_VERSION = "1"
@@ -55,19 +61,33 @@ class LinesClient(BaseClient):
         """
         data = data or {}
         return self._call("{}".format(line_id), data=data, method="PUT", **options)
-    
-    def get_all(self, limit: int = -1, extra_properties: Union[List[str], str] = None,
-                with_history: bool = False, **options) -> list:
+
+    def get_all(
+        self,
+        limit: int = -1,
+        extra_properties: Union[List[str], str] = None,
+        with_history: bool = False,
+        **options
+    ) -> list:
         """
         Get all line items in hubspot
         :see: https://legacydocs.hubspot.com/docs/methods/line-items/get-all-line-items
         """
-        generator = self.get_all_as_generator(limit=limit, extra_properties=extra_properties,
-                                              with_history=with_history, **options)
+        generator = self.get_all_as_generator(
+            limit=limit,
+            extra_properties=extra_properties,
+            with_history=with_history,
+            **options
+        )
         return list(generator)
-    
-    def get_all_as_generator(self, limit: int = -1, extra_properties: Union[List[str], str] = None,
-                             with_history: bool = False, **options) -> Iterator[dict]:
+
+    def get_all_as_generator(
+        self,
+        limit: int = -1,
+        extra_properties: Union[List[str], str] = None,
+        with_history: bool = False,
+        **options
+    ) -> Iterator[dict]:
         """
         Get all line items in hubspot
         :see: https://legacydocs.hubspot.com/docs/methods/line-items/get-all-line-items
@@ -105,7 +125,7 @@ class LinesClient(BaseClient):
             total_line_items += len(outputs)
             offset = batch["offset"]
 
-            reached_limit = limited and total_line_items>= limit
+            reached_limit = limited and total_line_items >= limit
             finished = not batch["hasMore"] or reached_limit
 
             # Since the API doesn't aways tries to return 100 line items we may pass the desired limit
