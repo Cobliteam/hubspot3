@@ -134,6 +134,39 @@ class LinesClient(BaseClient):
 
             yield from outputs
 
+    def get_all_ids(self, **options) -> list:
+        """
+        Get all line items in hubspot
+        :see: https://legacydocs.hubspot.com/docs/methods/line-items/get-all-line-items
+        """
+        generator = self.get_all_ids_as_generator(**options)
+        return list(generator)
+
+    def get_all_ids_as_generator(self, **options) -> Iterator[dict]:
+        """
+        Get all line items in hubspot
+        :see: https://legacydocs.hubspot.com/docs/methods/line-items/get-all-line-items
+        """
+        offset = 0
+        finished = False
+        while not finished:
+            input_lines = []
+            # Since properties is added to the url there is a limiting amount that you can request
+            batch = self._call(
+                "objects/line_items/paged",
+                method="GET",
+                doseq=True,
+                params={"offset": offset},
+                **options
+            )
+            for line in batch["objects"]:
+                input_lines.append({"id": f"{line['objectId']}"})
+            offset = batch["offset"]
+
+            finished = not batch["hasMore"]
+
+            yield from input_lines
+
     def link_line_item_to_deal(self, line_item_id, deal_id) -> Dict:
         """Link a line item to a deal."""
         associations_client = CRMAssociationsClient(**self.credentials)
