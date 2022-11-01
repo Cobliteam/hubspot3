@@ -5,7 +5,6 @@ hubspot lines api
 from typing import Dict, Iterator, List, Union
 
 from hubspot3.base import BaseClient
-from hubspot3.crm_associations import CRMAssociationsClient
 from hubspot3.utils import (
     get_log,
     join_output_properties,
@@ -166,8 +165,3 @@ class LinesClient(BaseClient):
             finished = not batch["hasMore"]
 
             yield from input_lines
-
-    def link_line_item_to_deal(self, line_item_id, deal_id) -> Dict:
-        """Link a line item to a deal."""
-        associations_client = CRMAssociationsClient(**self.credentials)
-        return associations_client.link_line_item_to_deal(line_item_id, deal_id)
