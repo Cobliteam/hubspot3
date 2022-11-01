@@ -1,12 +1,16 @@
 """
 hubspot crm_associations api
 """
-from hubspot3.base import BaseClient
-from hubspot3.utils import get_log
+import itertools
 from enum import Enum
+from typing import Iterator
+
+from hubspot3.base import BaseClient
+from hubspot3.lines import LinesClient
+from hubspot3.utils import get_log
 
 
-ASSOCIATIONS_API_VERSION = "1"
+ASSOCIATIONS_API_VERSION = "3"
 
 
 class Definitions(Enum):
@@ -52,7 +56,7 @@ class CRMAssociationsClient(BaseClient):
         self.log = get_log("hubspot3.crm_associations")
 
     def _get_path(self, subpath):
-        return "crm-associations/v{}/{}".format(
+        return "crm/v{}/{}".format(
             self.options.get("version") or ASSOCIATIONS_API_VERSION, subpath
         )
 
@@ -179,3 +183,62 @@ class CRMAssociationsClient(BaseClient):
             to_object=company_id,
             definition=Definitions.OWNER_TO_COMPANY,
         )
+
+    def chunks(self, iterable, size=100):
+        length = len(iterable)
+        it = iter(iterable)
+        for i in range(0, int(length / size) + (length % size > 0)):
+            r = []
+            for item in itertools.islice(it, size):
+                r.append(item)
+            yield r
+
+    def get_all_as_generator(
+        self,
+        fromObjectType: str,
+        toObjectType: str,
+        listObjects: Iterator[dict],
+        limit: int = -1
+    ) -> Iterator[dict]:
+        """
+        get all associations batch
+        :see: https://developers.hubspot.com/docs/api/crm/associations/v3
+        """
+        limited = limit > 0
+
+        offset = 0
+        total = 0
+        outputs = []
+        index = 0
+        for list_obj in self.chunks(listObjects, 150):
+            index = index + 1
+            dict_obj = dict()
+            dict_obj["inputs"] = list_obj
+            batch = self._call(
+                "associations/{}/{}/batch/read".format(fromObjectType, toObjectType),
+                method="POST",
+                doseq=True,
+                params={"offset": offset},
+                data=dict_obj
+            )
+            outputs.extend(batch["results"])
+
+        total = len(outputs)
+
+        reached_limit = limited and total >= limit
+
+        # Since the API doesn't aways tries to return 100 line items we may pass the desired limit
+        if reached_limit:
+            outputs = outputs[:limit]
+
+        yield from outputs
+
+    def get_lines_items_to_deals(self) -> list:
+        """Get the lines related to a deal."""
+        lines_client = LinesClient(**self.credentials)
+        generator = self.get_all_as_generator(
+            fromObjectType="line_items",
+            toObjectType="deals",
+            listObjects=lines_client.get_all_ids()
+        )
+        return list(generator)
