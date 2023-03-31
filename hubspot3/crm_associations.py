@@ -7,8 +7,8 @@ from typing import Iterator
 
 from hubspot3.base import BaseClient
 from hubspot3.lines import LinesClient
+from hubspot3.tickets import TicketsClient
 from hubspot3.utils import get_log
-
 
 ASSOCIATIONS_API_VERSION = "3"
 
@@ -198,7 +198,7 @@ class CRMAssociationsClient(BaseClient):
         fromObjectType: str,
         toObjectType: str,
         listObjects: Iterator[dict],
-        limit: int = -1
+        limit: int = -1,
     ) -> Iterator[dict]:
         """
         get all associations batch
@@ -219,7 +219,7 @@ class CRMAssociationsClient(BaseClient):
                 method="POST",
                 doseq=True,
                 params={"offset": offset},
-                data=dict_obj
+                data=dict_obj,
             )
             outputs.extend(batch["results"])
 
@@ -239,6 +239,16 @@ class CRMAssociationsClient(BaseClient):
         generator = self.get_all_as_generator(
             fromObjectType="line_items",
             toObjectType="deals",
-            listObjects=lines_client.get_all_ids()
+            listObjects=lines_client.get_all_ids(),
+        )
+        return list(generator)
+
+    def get_tickets_to_engagements(self) -> list:
+        """From a ticket, get associated engagement to it"""
+        ticket_client = TicketsClient(**self.credentials)
+        generator = self.get_all_as_generator(
+            fromObjectType="tickets",
+            toObjectType="engagements",
+            listObjects=ticket_client.get_all(),
         )
         return list(generator)
