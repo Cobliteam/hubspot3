@@ -249,6 +249,6 @@ class CRMAssociationsClient(BaseClient):
         generator = self.get_all_as_generator(
             fromObjectType="tickets",
             toObjectType="engagements",
-            listObjects=ticket_client.get_all(),
+            listObjects=ticket_client.get_all_ids(),
         )
         return list(generator)

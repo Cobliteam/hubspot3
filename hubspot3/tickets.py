@@ -4,8 +4,8 @@ hubspot tickets api
 from typing import Dict, Iterator, List, Set, Union
 
 from hubspot3.base import BaseClient
-from hubspot3.utils import prettify, get_log, join_output_properties, split_properties
-
+from hubspot3.utils import (get_log, join_output_properties, prettify,
+                            split_properties)
 
 TICKETS_API_VERSION = "1"
 
@@ -261,3 +261,36 @@ class TicketsClient(BaseClient):
         generator = self.get_recently_created_as_generator(limit=limit, time_offset=time_offset,
                                                            ticket_id_offset=ticket_id_offset)
         return list(generator)
+    
+    def get_all_ids(self, **options) -> list:
+        """
+        Get all tickets ids in hubspot, returning them as a generator
+        :see: https://developers.hubspot.com/docs/methods/tickets/get-all-tickets
+        """
+        generator = self.get_all_ids_as_generator(**options)
+        return list(generator)
+
+    def get_all_ids_as_generator(self, **options) -> Iterator[dict]:
+        """
+        Get all tickets ids in hubspot, returning them as a generator
+        :see: https://developers.hubspot.com/docs/methods/tickets/get-all-tickets
+        """
+        offset = 0
+        finished = False
+        while not finished:
+            input_lines = []
+            batch = self._call(
+                "objects/tickets/paged",
+                method="GET",
+                doseq=True,
+                params={"offset": offset},
+                **options
+            )
+            for line in batch["objects"]:
+                input_lines.append({"id": f"{line['objectId']}"})
+            offset = batch["offset"]
+
+            finished = not batch["hasMore"]
+
+            yield from input_lines
+            
