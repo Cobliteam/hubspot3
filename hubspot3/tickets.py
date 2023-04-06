@@ -264,7 +264,7 @@ class TicketsClient(BaseClient):
     
     def get_all_ids(self, **options) -> list:
         """
-        Get all tickets ids in hubspot, returning them as a generator
+        Get all tickets ids in hubspot, returning them as a list
         :see: https://developers.hubspot.com/docs/methods/tickets/get-all-tickets
         """
         generator = self.get_all_ids_as_generator(**options)
@@ -293,4 +293,4 @@ class TicketsClient(BaseClient):
             finished = not batch["hasMore"]
 
             yield from input_lines
-            
+
