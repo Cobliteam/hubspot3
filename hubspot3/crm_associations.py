@@ -239,6 +239,16 @@ class CRMAssociationsClient(BaseClient):
         generator = self.get_all_as_generator(
             fromObjectType="line_items",
             toObjectType="deals",
-            listObjects=lines_client.get_all_ids()
+            listObjects=lines_client.get_all_ids(),
+        )
+        return list(generator)
+
+    def get_tickets_to_engagements(self) -> list:
+        """From a ticket, get associated engagement to it"""
+        ticket_client = TicketsClient(**self.credentials)
+        generator = self.get_all_as_generator(
+            fromObjectType="tickets",
+            toObjectType="engagements",
+            listObjects=ticket_client.get_all_ids(),
         )
         return list(generator)
