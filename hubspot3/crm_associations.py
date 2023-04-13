@@ -7,8 +7,8 @@ from typing import Iterator
 
 from hubspot3.base import BaseClient
 from hubspot3.lines import LinesClient
+from hubspot3.tickets import TicketsClient
 from hubspot3.utils import get_log
-
 
 ASSOCIATIONS_API_VERSION = "3"
 
