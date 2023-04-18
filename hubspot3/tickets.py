@@ -1,7 +1,10 @@
 """
 hubspot tickets api
 """
+import logging
+from time import sleep
 from typing import Dict, Iterator, List, Set, Union
+
 
 from hubspot3.base import BaseClient
 from hubspot3.utils import (get_log, join_output_properties, prettify,
@@ -105,32 +108,45 @@ class TicketsClient(BaseClient):
         offset = 0
         total_tickets = 0
         finished = False
+        n_tries = 10
+        tries = 0
         while not finished:
             # Since properties is added to the url there is a limiting amount that you can request
-            unjoined_outputs = []
-            for properties_group in properties_groups:
-                batch = self._call(
-                    "objects/tickets/paged",
-                    method="GET",
-                    doseq=True,
-                    params={"offset": offset, property_name: properties_group},
-                    **options
-                )
-                unjoined_outputs.extend(batch["objects"])
+            try:
+                unjoined_outputs = []
+                for properties_group in properties_groups:
+                    batch = self._call(
+                        "objects/tickets/paged",
+                        method="GET",
+                        doseq=True,
+                        params={"offset": offset, property_name: properties_group},
+                        **options
+                    )
+                    unjoined_outputs.extend(batch["objects"])
 
-            outputs = join_output_properties(unjoined_outputs, "objectId")
+                outputs = join_output_properties(unjoined_outputs, "objectId")
 
-            total_tickets += len(outputs)
-            offset = batch["offset"]
+                total_tickets += len(outputs)
+                offset = batch["offset"]
 
-            reached_limit = limited and total_tickets >= limit
-            finished = not batch["hasMore"] or reached_limit
+                reached_limit = limited and total_tickets >= limit
+                finished = not batch["hasMore"] or reached_limit
 
-            # Since the API doesn't aways tries to return 100 tickets we may pass the desired limit
-            if reached_limit:
-                outputs = outputs[:limit]
+                # Since the API doesn't aways tries to return 100 tickets we may pass the desired limit
+                if reached_limit:
+                    outputs = outputs[:limit]
 
-            yield from outputs
+                yield from outputs
+            except ConnectionResetError as e:
+                tries += 1
+                
+                if tries >= n_tries:
+                    raise e
+                else:
+                    logging.info(f"######   TENTATIVA NUMERO: {tries}")
+                sleep(120)
+            
+
 
     def _get_properties(self, extra_properties: Union[List[str], str] = None) -> Set[str]:
         properties = set(self.default_batch_properties)
