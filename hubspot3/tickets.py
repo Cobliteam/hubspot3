@@ -110,14 +110,10 @@ class TicketsClient(BaseClient):
         finished = False
         n_tries = 10
         tries = 0
-        test_simulation_erro = 1
         while not finished:
             # Since properties is added to the url there is a limiting
             # amount that you can request
             try:
-                if test_simulation_erro % 100 == 0:
-                    raise ConnectionResetError
-
                 unjoined_outputs = []
                 for properties_group in properties_groups:
                     batch = self._call(
@@ -141,11 +137,8 @@ class TicketsClient(BaseClient):
                 # tickets we may pass the desired limit
                 if reached_limit:
                     outputs = outputs[:limit]
-                test_simulation_erro += 1
                 yield from outputs
             except ConnectionResetError as e:
-                tries += 1
-                test_simulation_erro += 1
                 if tries >= n_tries:
                     raise e
                 else:
