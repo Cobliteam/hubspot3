@@ -145,7 +145,7 @@ class TicketsClient(BaseClient):
                 yield from outputs
             except ConnectionResetError as e:
                 tries += 1
-
+                test_simulation_erro += 1
                 if tries >= n_tries:
                     raise e
                 else:
