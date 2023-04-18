@@ -115,7 +115,7 @@ class TicketsClient(BaseClient):
             # Since properties is added to the url there is a limiting
             # amount that you can request
             try:
-                if test_simulation_erro % 15 == 0:
+                if test_simulation_erro % 100 == 0:
                     raise ConnectionResetError
 
                 unjoined_outputs = []
@@ -150,6 +150,7 @@ class TicketsClient(BaseClient):
                     raise e
                 else:
                     logging.info(f"######   TENTATIVA NUMERO: {tries}")
+                    logging.info(f"######   total_tickets: {total_tickets}")
                 sleep(120)
 
     def _get_properties(self, extra_properties: Union[List[str], str] = None) -> Set[str]:
