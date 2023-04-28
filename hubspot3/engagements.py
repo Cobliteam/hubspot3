@@ -80,7 +80,6 @@ class EngagementsClient(BaseClient):
             query_limit = limit
         offset = 0
         engagement_counter = 0
-        n_tries = 10
         tries = 0
         while not finished:
             try:
@@ -104,13 +103,10 @@ class EngagementsClient(BaseClient):
                 offset = batch["offset"]
 
                 yield from engagements
-            except ConnectionResetError as e:
-                if tries >= n_tries:
-                    raise e
-                else:
-                    tries += 1
-                    logging.info(f"######   TENTATIVA NUMERO: {tries}")
-                    logging.info(f"######   total_engagements: {engagement_counter}")
+            except ConnectionResetError:
+                tries += 1
+                logging.info(f"######   TENTATIVA NUMERO: {tries}")
+                logging.info(f"######   total_engagements: {engagement_counter}")
                 sleep(120)
 
     def get_recently_modified(self, start_date: int, end_date: int, **options):
@@ -119,7 +115,6 @@ class EngagementsClient(BaseClient):
         engagements = []
         query_limit = 100  # Max value according to docs
         offset = 0
-        n_tries = 10
         tries = 0
         while not finished:
             try:
@@ -135,12 +130,9 @@ class EngagementsClient(BaseClient):
                 engagements = clean_result("engagements", engagements, start_date, end_date)
 
                 yield from engagements
-            except ConnectionResetError as e:
-                if tries >= n_tries:
-                    raise e
-                else:
-                    tries += 1
-                    logging.info(f"######   TENTATIVA NUMERO: {tries}")
+            except ConnectionResetError:
+                tries += 1
+                logging.info(f"######   TENTATIVA NUMERO: {tries}")
                 sleep(120)
 
     def count_recently_modified_engagements(self, since: int):
