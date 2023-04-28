@@ -142,6 +142,7 @@ class TicketsClient(BaseClient):
                 if tries >= n_tries:
                     raise e
                 else:
+                    tries += 1
                     logging.info(f"######   TENTATIVA NUMERO: {tries}")
                     logging.info(f"######   total_tickets: {total_tickets}")
                 sleep(120)
