@@ -1,6 +1,8 @@
 """
 hubspot engagements api
 """
+import logging
+from time import sleep
 from hubspot3.base import BaseClient
 from hubspot3.utils import clean_result, get_log
 
@@ -78,27 +80,34 @@ class EngagementsClient(BaseClient):
             query_limit = limit
         offset = 0
         engagement_counter = 0
+        tries = 0
         while not finished:
-            batch = self._call(
-                "engagements/paged",
-                method="GET",
-                params={"limit": query_limit, "offset": offset},
-                **options
-            )
+            try:
+                batch = self._call(
+                    "engagements/paged",
+                    method="GET",
+                    params={"limit": query_limit, "offset": offset},
+                    **options
+                )
 
-            engagements = batch["results"]
+                engagements = batch["results"]
 
-            engagement_counter += len(engagements)
-            reached_limit = limited and engagement_counter >= limit
+                engagement_counter += len(engagements)
+                reached_limit = limited and engagement_counter >= limit
 
-            if reached_limit:
-                cutoff = len(engagements) - (engagement_counter - limit)
-                engagements = engagements[:cutoff]
+                if reached_limit:
+                    cutoff = len(engagements) - (engagement_counter - limit)
+                    engagements = engagements[:cutoff]
 
-            finished = not batch["hasMore"] or reached_limit
-            offset = batch["offset"]
+                finished = not batch["hasMore"] or reached_limit
+                offset = batch["offset"]
 
-            yield from engagements
+                yield from engagements
+            except ConnectionResetError:
+                tries += 1
+                logging.info(f"######   TENTATIVA NUMERO: {tries}")
+                logging.info(f"######   total_engagements: {engagement_counter}")
+                sleep(120)
 
     def get_recently_modified(self, start_date: int, end_date: int, **options):
         """Get recently modified engagements."""
@@ -106,20 +115,25 @@ class EngagementsClient(BaseClient):
         engagements = []
         query_limit = 100  # Max value according to docs
         offset = 0
-
+        tries = 0
         while not finished:
-            batch = self._call(
-                "engagements/recent/modified",
-                method="GET",
-                params={"limit": query_limit, "offset": offset, "since": start_date},
-                **options
-            )
-            engagements.extend(batch["results"])
-            finished = not batch["hasMore"]
-            offset = batch["offset"]
-            engagements = clean_result("engagements", engagements, start_date, end_date)
+            try:
+                batch = self._call(
+                    "engagements/recent/modified",
+                    method="GET",
+                    params={"limit": query_limit, "offset": offset, "since": start_date},
+                    **options
+                )
+                engagements.extend(batch["results"])
+                finished = not batch["hasMore"]
+                offset = batch["offset"]
+                engagements = clean_result("engagements", engagements, start_date, end_date)
 
-            yield from engagements
+                yield from engagements
+            except ConnectionResetError:
+                tries += 1
+                logging.info(f"######   TENTATIVA NUMERO: {tries}")
+                sleep(120)
 
     def count_recently_modified_engagements(self, since: int):
         """check limit of request."""

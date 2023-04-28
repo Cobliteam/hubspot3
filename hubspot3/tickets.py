@@ -108,7 +108,6 @@ class TicketsClient(BaseClient):
         offset = 0
         total_tickets = 0
         finished = False
-        n_tries = 10
         tries = 0
         while not finished:
             # Since properties is added to the url there is a limiting
@@ -138,12 +137,10 @@ class TicketsClient(BaseClient):
                 if reached_limit:
                     outputs = outputs[:limit]
                 yield from outputs
-            except ConnectionResetError as e:
-                if tries >= n_tries:
-                    raise e
-                else:
-                    logging.info(f"######   TENTATIVA NUMERO: {tries}")
-                    logging.info(f"######   total_tickets: {total_tickets}")
+            except ConnectionResetError:
+                tries += 1
+                logging.info(f"######   TENTATIVA NUMERO: {tries}")
+                logging.info(f"######   total_tickets: {total_tickets}")
                 sleep(120)
 
     def _get_properties(self, extra_properties: Union[List[str], str] = None) -> Set[str]:
