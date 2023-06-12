@@ -163,7 +163,7 @@ class DealsClient(BaseClient):
             except ConnectionResetError:
                 tries += 1
                 logging.info(f"######   TENTATIVA NUMERO: {tries}")
-                logging.info(f"######   total_engagements: {deal_counter}")
+                logging.info(f"######   total_deals: {deal_counter}")
                 sleep(120)
 
     def _get_recent(
