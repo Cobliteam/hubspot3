@@ -4,6 +4,8 @@ hubspot deals api
 import urllib.parse
 from typing import Dict, Union, List
 
+import logging
+from time import sleep
 from hubspot3.base import BaseClient
 from hubspot3.utils import clean_result, get_log, prettify, join_output_properties, split_properties
 
@@ -126,36 +128,43 @@ class DealsClient(BaseClient):
 
         properties_groups = split_properties(properties, property_name=property_name)
         deal_counter = 0
+        tries = 0
         while not finished:
-            unjoined_deals = []
-            for properties_group in properties_groups:
-                batch = self._call(
-                    "deal/paged",
-                    method="GET",
-                    params={
-                        "limit": query_limit,
-                        "offset": offset,
-                        property_name: properties_group,
-                        "includeAssociations": True,
-                    },
-                    doseq=True,
-                    **options
-                )
-                unjoined_deals.extend(batch["deals"])
+            try:
+                unjoined_deals = []
+                for properties_group in properties_groups:
+                    batch = self._call(
+                        "deal/paged",
+                        method="GET",
+                        params={
+                            "limit": query_limit,
+                            "offset": offset,
+                            property_name: properties_group,
+                            "includeAssociations": True,
+                        },
+                        doseq=True,
+                        **options
+                    )
+                    unjoined_deals.extend(batch["deals"])
 
-            deals = join_output_properties(unjoined_deals, "dealId")
+                deals = join_output_properties(unjoined_deals, "dealId")
 
-            deal_counter += len(deals)
-            reached_limit = limited and deal_counter >= limit
+                deal_counter += len(deals)
+                reached_limit = limited and deal_counter >= limit
 
-            if reached_limit:
-                cutoff = len(deals) - (deal_counter - limit)
-                deals = deals[:cutoff]
+                if reached_limit:
+                    cutoff = len(deals) - (deal_counter - limit)
+                    deals = deals[:cutoff]
 
-            finished = not batch["hasMore"] or reached_limit
-            offset = batch["offset"]
+                finished = not batch["hasMore"] or reached_limit
+                offset = batch["offset"]
 
-            yield from deals
+                yield from deals
+            except ConnectionResetError:
+                tries += 1
+                logging.info(f"######   TENTATIVA NUMERO: {tries}")
+                logging.info(f"######   total_deals: {deal_counter}")
+                sleep(120)
 
     def _get_recent(
         self,
@@ -268,29 +277,35 @@ class DealsClient(BaseClient):
         :see: https://developers.hubspot.com/docs/methods/deals/get_deals_modified
         """
         finished = False
+        tries = 0
 
         while not finished:
-            unjoined_deals = []
-            batch = self._call(
-                "deal/recent/modified",
-                method="GET",
-                params={
-                    "since": start_date,
-                    "count": query_limit,
-                    "offset": offset,
-                    "includePropertyVersions": with_history
-                },
-                doseq=True,
-                **options
-            )
-            unjoined_deals.extend(batch["results"])
+            try:
+                unjoined_deals = []
+                batch = self._call(
+                    "deal/recent/modified",
+                    method="GET",
+                    params={
+                        "since": start_date,
+                        "count": query_limit,
+                        "offset": offset,
+                        "includePropertyVersions": with_history
+                    },
+                    doseq=True,
+                    **options
+                )
+                unjoined_deals.extend(batch["results"])
 
-            finished = not batch["hasMore"]
-            offset = batch["offset"]
-            deals = join_output_properties(unjoined_deals, "dealId")
-            deals = clean_result("deals", deals, start_date, end_date)
+                finished = not batch["hasMore"]
+                offset = batch["offset"]
+                deals = join_output_properties(unjoined_deals, "dealId")
+                deals = clean_result("deals", deals, start_date, end_date)
 
-            yield from deals
+                yield from deals
+            except ConnectionResetError:
+                tries += 1
+                logging.info(f"######   TENTATIVA NUMERO: {tries}")
+                sleep(120)
 
     def count_recently_modified_deals(self, start_date: int):
         """check limit of request."""
