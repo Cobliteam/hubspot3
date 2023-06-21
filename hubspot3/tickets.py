@@ -2,6 +2,7 @@
 hubspot tickets api
 """
 import logging
+import ssl
 from time import sleep
 from typing import Dict, Iterator, List, Set, Union
 
@@ -137,7 +138,7 @@ class TicketsClient(BaseClient):
                 if reached_limit:
                     outputs = outputs[:limit]
                 yield from outputs
-            except ConnectionResetError:
+            except (ConnectionResetError, ssl.SSLError):
                 tries += 1
                 logging.info(f"######   TENTATIVA NUMERO: {tries}")
                 logging.info(f"######   total_tickets: {total_tickets}")
