@@ -137,7 +137,8 @@ class TicketsClient(BaseClient):
                 if reached_limit:
                     outputs = outputs[:limit]
                 yield from outputs
-            except ConnectionResetError:
+            except (ConnectionResetError, Exception) as e:
+                logging.warn(e)
                 tries += 1
                 logging.info(f"######   TENTATIVA NUMERO: {tries}")
                 logging.info(f"######   total_tickets: {total_tickets}")

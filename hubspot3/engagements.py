@@ -103,7 +103,8 @@ class EngagementsClient(BaseClient):
                 offset = batch["offset"]
 
                 yield from engagements
-            except ConnectionResetError:
+            except (ConnectionResetError, Exception) as e:
+                logging.warn(e)
                 tries += 1
                 logging.info(f"######   TENTATIVA NUMERO: {tries}")
                 logging.info(f"######   total_engagements: {engagement_counter}")
@@ -130,7 +131,8 @@ class EngagementsClient(BaseClient):
                 engagements = clean_result("engagements", engagements, start_date, end_date)
 
                 yield from engagements
-            except ConnectionResetError:
+            except (ConnectionResetError, Exception) as e:
+                logging.warn(e)
                 tries += 1
                 logging.info(f"######   TENTATIVA NUMERO: {tries}")
                 sleep(120)
