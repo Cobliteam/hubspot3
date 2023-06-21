@@ -2,7 +2,6 @@
 hubspot deals api
 """
 import urllib.parse
-import ssl
 from typing import Dict, Union, List
 
 import logging
@@ -161,7 +160,8 @@ class DealsClient(BaseClient):
                 offset = batch["offset"]
 
                 yield from deals
-            except (ConnectionResetError, ssl.SSLError):
+            except (ConnectionResetError, Exception) as e:
+                logging.warn(e)
                 tries += 1
                 logging.info(f"######   TENTATIVA NUMERO: {tries}")
                 logging.info(f"######   total_deals: {deal_counter}")
@@ -303,7 +303,8 @@ class DealsClient(BaseClient):
                 deals = clean_result("deals", deals, start_date, end_date)
 
                 yield from deals
-            except (ConnectionResetError, ssl.SSLError):
+            except (ConnectionResetError, Exception) as e:
+                logging.warn(e)
                 tries += 1
                 logging.info(f"######   TENTATIVA NUMERO: {tries}")
                 sleep(120)

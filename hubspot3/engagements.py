@@ -2,7 +2,6 @@
 hubspot engagements api
 """
 import logging
-import ssl
 from time import sleep
 from hubspot3.base import BaseClient
 from hubspot3.utils import clean_result, get_log
@@ -104,7 +103,8 @@ class EngagementsClient(BaseClient):
                 offset = batch["offset"]
 
                 yield from engagements
-            except (ConnectionResetError, ssl.SSLError):
+            except (ConnectionResetError, Exception) as e:
+                logging.warn(e)
                 tries += 1
                 logging.info(f"######   TENTATIVA NUMERO: {tries}")
                 logging.info(f"######   total_engagements: {engagement_counter}")
@@ -131,7 +131,8 @@ class EngagementsClient(BaseClient):
                 engagements = clean_result("engagements", engagements, start_date, end_date)
 
                 yield from engagements
-            except (ConnectionResetError, ssl.SSLError):
+            except (ConnectionResetError, Exception) as e:
+                logging.warn(e)
                 tries += 1
                 logging.info(f"######   TENTATIVA NUMERO: {tries}")
                 sleep(120)
